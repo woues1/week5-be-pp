@@ -1,3 +1,6 @@
+require('dotenv').config();
+const port = process.env.PORT || 4000;
+
 const express = require("express");
 const app = express();
 const tourRouter = require("./routes/tourRouter");
@@ -22,8 +25,6 @@ app.use("/api/users", userRouter);
 app.use(unknownEndpoint);
 // app.use(errorHandler);
 
-const port = process.env.PORT || 4000;
-// Start the server
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });

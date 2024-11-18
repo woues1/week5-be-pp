@@ -1,57 +1,85 @@
 const User = require("../models/userModel");
-
+const mongoose = require("mongoose")
 // GET /users
-const getAllUsers = (req, res) => {
-  const users = User.getAll();
-  res.json(users);
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({}).sort({ createdAt: -1 })
+    res.status(200).json(users)
+  }
+  catch (error) {
+    res.status(500).json({ message: "Failed to retrieve users" });
+  }
 };
 
 // POST /users
-const createUser = (req, res) => {
-  const newUser = User.addOne({ ...req.body }); // Spread the req.body object
-
-  if (newUser) {
+const createUser = async (req, res) => {
+  try {
+    const newUser = await User.create({ ...req.body });
     res.status(201).json(newUser);
-  } else {
-    // Handle error (e.g., failed to create user)
-    res.status(400).json({ message: "Invalid user data" });
   }
+  catch (error) {
+    res.status(400).json({ message: "Failed to create user" })
+  }
+
 };
- 
+
 // GET /users/:userId
-const getUserById = (req, res) => {
-  const userId = req.params.userId;
-  const user = User.findById(userId);
-  if (user) {
-    res.json(user);
-  } else {
-    res.status(404).json({ message: "User not found" });
+const getUserById = async (req, res) => {
+  const { userId } = req.params
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(404).json({ message: "Invalid user ID" });
+  }
+
+  try {
+    const user = await User.findOne({_id: userId});
+
+    if(!user){
+      throw new error
+    }
+    
+    res.status(200).json(user)
+  }
+  catch (error) {
+    res.status(404).json({ message: "User not found" })
   }
 };
 
 // PUT /users/:userId
-const updateUser = (req, res) => {
+const updateUser = async (req, res) => {
   const userId = req.params.userId;
-  const updatedUser = User.updateOneById(userId, { ...req.body }); // Spread the req.body object
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).json({ message: "Invalid user ID" });
+  }
 
-  if (updatedUser) {
-    res.json(updatedUser);
-  } else {
-    // Handle update failure (e.g., user not found)
+  try {
+    const updatedUser = await User.findOneAndReplace(
+      { _id: userId },
+      { ...req.body },
+      { new: true }
+    )
+    res.status(200).json(updatedUser);
+  }
+
+  catch (error) {
     res.status(404).json({ message: "User not found" });
   }
 };
 
 // DELETE /users/:userId
-const deleteUser = (req, res) => {
+const deleteUser = async (req, res) => {
   const userId = req.params.userId;
-  const isDeleted = User.deleteOneById(userId);
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).json({ message: "Invalid user ID" });
+  }
 
-  if (isDeleted) {
+  try {
+    await User.findOneAndDelete(
+      { _id: userId }
+    );
     res.status(204).send();
-  } else {
-    // Handle deletion failure (e.g., user not found)
-    res.status(404).json({ message: "User not found" });
+  }
+  catch (error) {
+    res.status(404).json({ message: "User not found" })
   }
 };
 
